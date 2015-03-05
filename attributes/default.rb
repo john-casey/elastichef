@@ -34,11 +34,11 @@ user = 'root'
 key_name = "#{application}-#{environment}-key"
 default[application][environment]['key']['name'] = key_name
 default[application][environment]['key']['path'] = '~/.chef/keys'
-default[application][environment]['server'][role]['count'] = 0
+default[application][environment]['server'][role]['count'] = 1
 default[application][environment]['server'][role]['name_prefix'] = "#{application}-#{role}-#{environment}-"
 default[application][environment]['server'][role]['options'] = {
+  :availability_zone => 'us-east-1a',
   :bootstrap_options => {
-    :availability_zone => 'us-east-1',
     :block_device_mappings => [{
       :device_name => "/dev/sda2",
       :ebs => {
@@ -47,10 +47,10 @@ default[application][environment]['server'][role]['options'] = {
       }
     }],
     :image_id => 'ami-bc8131d4',
-    :instance_type => 'm3.small`',
+    :instance_type => 't1.micro',
     :key_name => key_name,
-    :monitoring_enabled => false,
-    :security_groups => ["#{application}-#{environment}-sg"]
+    :security_groups => ["#{application}-#{role}-sg"]
   },
+  :monitoring_enabled => false,
   :ssh_username => user
 }

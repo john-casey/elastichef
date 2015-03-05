@@ -44,7 +44,7 @@ environments.each do |environment|
       type :rsa
     end
     aws_key_pair key_name do 
-      allow_overwrite true
+      allow_overwrite false
       private_key_path "#{key_name}.pem"
     end
   end
@@ -69,6 +69,9 @@ aws_security_group "#{application}-db-sg"  do
 end
 
 # Create our machines
+with_machine_options({
+  :key_name => 'elastichef-dev-key'
+})
 with_driver 'aws'
 machine_batch 'Converge Servers' do
   applications.each do |application|
@@ -81,6 +84,7 @@ machine_batch 'Converge Servers' do
           server_name = "#{server_name_prefix}#{server_index}"
           server_options = server['options']
           machine server_name do
+            # ***FIXME*** Add generic role names here
             machine_options server_options
           end
         end

@@ -33,24 +33,18 @@ applications = node['applications']
 
 # Destroy our machines
 with_driver 'aws'
-machine_batch 'Converge Servers' do
-  applications.each do |application|
-    environments.each do |environment|
-      servers = node[application][environment]['server']
-      servers.each do |role,server|
-        server_count = server['count']
-        1.upto(server_count) do |server_index|
-          server_name_prefix = server['name_prefix']
-          server_name = "#{server_name_prefix}#{server_index}"
-          server_options = server['options']
-          begin
-            machine server_name do
-              action :destroy
-              machine_options server_options
-            end
-          rescue Exception => msg
-              Chef::Log.warn "Unable to destroy #{server_name}. #{msg}"
-          end
+applications.each do |application|
+  environments.each do |environment|
+    servers = node[application][environment]['server']
+    servers.each do |role,server|
+      server_count = server['count']
+      1.upto(server_count) do |server_index|
+        server_name_prefix = server['name_prefix']
+        server_name = "#{server_name_prefix}#{server_index}"
+        server_options = server['options']
+        machine server_name do
+          action :destroy
+          machine_options server_options
         end
       end
     end
@@ -66,12 +60,8 @@ applications.each do |application|
       security_group = "#{application}-#{role}-sg"
       if !security_group_set.include? security_group
         security_group_set.add security_group
-        begin
-          aws_security_group security_group do
-            action :delete
-          end
-        rescue Exception => msg
-          Chef::Log.warn "Unable to delete AWS security group #{security_group}. #{msg}"
+        aws_security_group security_group do
+          action :delete
         end
       end
     end
@@ -82,22 +72,16 @@ end
 key_set = Set.new
 applications.each do |application|
   environments.each do |environment|
+    key_path = node[application][environment]['key']['path']
     key_name = node[application][environment]['key']['name']
     if !key_set.include? key_name
       key_set.add key_name
-      begin
-        aws_key_pair key_name do 
-          action :delete
-        end
-      rescue Exception => msg
-        Chef::Log.warn "Unable to delete AWS key pair #{key_name}. #{msg}"
+      aws_key_pair key_name do 
+        action :delete
       end
-      begin
-        private_key "#{key_name}.pem" do
-          action :delete
-        end
-      rescue Exception => msg
-        Chef::Log.warn "Unable to delete private key #{key_name}.pem #{msg}"
+      private_key "#{key_name}.pem" do
+        action :delete
+        ignore_failure true
       end
     end
   end

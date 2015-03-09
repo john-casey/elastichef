@@ -31,6 +31,11 @@ require 'chef/provisioning/aws_driver'
 environments = node['environments']
 applications = node['applications']
 
+# Set up our chef environments
+environments.each do |environment|
+  chef_environment environment
+end
+
 # Set up our keys
 environments.each do |environment|
   applications.each do |application|
@@ -40,11 +45,13 @@ environments.each do |environment|
     #end
     key_name = node[application][environment]['key']['name']
     private_key "#{key_name}.pem" do
+      cipher 'AES-256-CBC'
       format :pem
-      type :rsa
+      size   2048
+      type   :rsa
     end
     aws_key_pair key_name do 
-      allow_overwrite false
+      allow_overwrite true
       private_key_path "#{key_name}.pem"
     end
   end
@@ -56,24 +63,21 @@ application = applications[0]
 aws_security_group "#{application}-app-sg" do
   description "#{application} app servers" 
   inbound_rules [
-    {:ports =>   22, :protocol => :tcp, :sources => ['0.0.0.0/0'] },
-    {:ports =>   80, :protocol => :tcp, :sources => ['0.0.0.0/0'] }
+    {:protocol => :icmp, :sources => ['0.0.0.0/0'] },
+    {:protocol => :tcp,  :sources => ['0.0.0.0/0'], :ports =>   22,  },
+    {:protocol => :tcp,  :sources => ['0.0.0.0/0'], :ports =>   80,  }
   ]
 end
 aws_security_group "#{application}-db-sg"  do
   description "#{application} db servers" 
   inbound_rules [
-    {:ports =>   22, :protocol => :tcp, :sources => ['0.0.0.0/0'] },
-    {:ports => 5432, :protocol => :tcp, :sources => ['0.0.0.0/0'] }
+    {:protocol => :icmp, :sources => ['0.0.0.0/0'] },
+    {:protocol => :tcp,  :sources => ['0.0.0.0/0'], :ports =>   22,  },
+    {:protocol => :tcp,  :sources => ['0.0.0.0/0'], :ports => 5432,  }
   ]
 end
 
-# Create our machines
-with_machine_options({
-  :key_name => 'elastichef-dev-key'
-})
-with_driver 'aws'
-machine_batch 'Converge Servers' do
+#machine_batch 'Converge Servers' do
   applications.each do |application|
     environments.each do |environment|
       servers = node[application][environment]['server']
@@ -83,13 +87,17 @@ machine_batch 'Converge Servers' do
           server_name_prefix = server['name_prefix']
           server_name = "#{server_name_prefix}#{server_index}"
           server_options = server['options']
+          key_name = node[application][environment]['key']['name']
           machine server_name do
-            # ***FIXME*** Add generic role names here
+            chef_environment environment
+            complete true
             machine_options server_options
+            role "#{application}-#{role}"
+            tags "#{application}.app", "#{environment}.env", "#{role}.role"
           end
         end
       end
     end
   end
-end
+#end
 

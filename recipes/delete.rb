@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: elastichef
-# Recipe:: destroy
+# Recipe:: delete
 #
 # Copyright (C) 2015 Innovisors
 #
@@ -32,7 +32,6 @@ environments = node['environments']
 applications = node['applications']
 
 # Destroy our machines
-with_driver 'aws'
 applications.each do |application|
   environments.each do |environment|
     servers = node[application][environment]['server']
@@ -69,6 +68,7 @@ applications.each do |application|
 end
 
 # Delete our keys
+=begin
 key_set = Set.new
 applications.each do |application|
   environments.each do |environment|
@@ -79,10 +79,11 @@ applications.each do |application|
       aws_key_pair key_name do 
         action :delete
       end
-      private_key "#{key_name}.pem" do
-        action :delete
-        ignore_failure true
-      end
+      #private_key "#{key_name}.pem" do
+      #  action :delete
+      #  ignore_failure true
+      #end
     end
   end
 end
+=end

@@ -30,7 +30,11 @@ default['environments'] = ['dev']
 environment = default['environments'][0]
 application = default['applications'][0]
 role = 'app'
-user = 'root'
+#username = "#{application}"
+#if environment != 'prod'
+#  username += "#{environment}"
+#end
+username = 'root'
 key_name = "#{application}-#{environment}-key"
 default[application][environment]['key']['name'] = key_name
 default[application][environment]['key']['path'] = '~/.chef/keys'
@@ -51,6 +55,8 @@ default[application][environment]['server'][role]['options'] = {
     :key_name => key_name,
     :security_groups => ["#{application}-#{role}-sg"]
   },
+  :driver => 'aws',
+  :key_name => key_name,
   :monitoring_enabled => false,
-  :ssh_username => user
+  :ssh_username => username
 }

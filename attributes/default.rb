@@ -24,21 +24,18 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
+# define our applications and environments
 default['applications'] = ['elastichef']
 default['environments'] = ['dev']
 
-environment = default['environments'][0]
+# define our dev app servers for our primary application
 application = default['applications'][0]
+environment = default['environments'][0]
 role = 'app'
-#username = "#{application}"
-#if environment != 'prod'
-#  username += "#{environment}"
-#end
-username = 'root'
 key_name = "#{application}-#{environment}-key"
 default[application][environment]['key']['name'] = key_name
-default[application][environment]['key']['path'] = '~/.chef/keys'
-default[application][environment]['server'][role]['count'] = 1
+default[application][environment]['key']['path'] = ENV['HOME'] + '/.chef/keys'
+default[application][environment]['server'][role]['count'] = 2
 default[application][environment]['server'][role]['name_prefix'] = "#{application}-#{role}-#{environment}-"
 default[application][environment]['server'][role]['options'] = {
   :availability_zone => 'us-east-1a',
@@ -51,12 +48,43 @@ default[application][environment]['server'][role]['options'] = {
       }
     }],
     :image_id => 'ami-bc8131d4',
-    :instance_type => 't1.micro',
+    :instance_type => 'm3.2xlarge',
     :key_name => key_name,
     :security_groups => ["#{application}-#{role}-sg"]
   },
   :driver => 'aws',
   :key_name => key_name,
   :monitoring_enabled => false,
-  :ssh_username => username
+  :ssh_username => 'root'
 }
+
+# define our dev db servers for our primary application
+application = default['applications'][0]
+environment = default['environments'][0]
+role = 'db'
+key_name = "#{application}-#{environment}-key"
+default[application][environment]['key']['name'] = key_name
+default[application][environment]['key']['path'] = ENV['HOME'] + '/.chef/keys'
+default[application][environment]['server'][role]['count'] = 1
+default[application][environment]['server'][role]['name_prefix'] = "#{application}-#{role}-#{environment}-"
+default[application][environment]['server'][role]['options'] = {
+  :availability_zone => 'us-east-1a',
+  :bootstrap_options => {
+    :block_device_mappings => [{
+      :device_name => "/dev/sda2",
+      :ebs => {
+        :volume_size => 16, # 16 GiB
+        :delete_on_termination => true
+      }
+    }],
+    :image_id => 'ami-bc8131d4',
+    :instance_type => 'm3.medium',
+    :key_name => key_name,
+    :security_groups => ["#{application}-#{role}-sg"]
+  },
+  :driver => 'aws',
+  :key_name => key_name,
+  :monitoring_enabled => false,
+  :ssh_username => 'root'
+}
+

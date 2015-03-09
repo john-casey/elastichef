@@ -50,6 +50,11 @@ applications.each do |application|
   end
 end
 
+# **FIXME**
+# Need logic here to wait for all servers to be terminated; otherwise, we cannot delete our
+# security groups. 
+# WORKAROUND: Rerun this recipe once the servers have all been terminated
+
 # Delete our security groups
 security_group_set = Set.new
 applications.each do |application|
@@ -68,7 +73,6 @@ applications.each do |application|
 end
 
 # Delete our keys
-=begin
 key_set = Set.new
 applications.each do |application|
   environments.each do |environment|
@@ -79,11 +83,11 @@ applications.each do |application|
       aws_key_pair key_name do 
         action :delete
       end
-      #private_key "#{key_name}.pem" do
-      #  action :delete
-      #  ignore_failure true
-      #end
+      private_key_file = "#{key_name}.pem"
+      private_key private_key_file do
+        action :delete
+        only_if { ::File.exists? "#{key_path}/#{private_key_file}" }
+      end
     end
   end
 end
-=end
